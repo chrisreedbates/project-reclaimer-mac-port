@@ -69,7 +69,7 @@ Open **Project Reclaimer** from Spotlight or Launchpad. A small window gets ever
    downloading it from the server. The game itself keeps saying "not downloaded… Start Steam" for these mods; the
    window explains that this is expected.
 
-The window's **Problems joining a server?** section explains the game messages players hit most (a server on an
+The window's **Problems joining or playing?** section explains the game messages players hit most (a server on an
 older version, a server with an outdated mod, and so on) and has a **Show logs** button for sending you the logs.
 
 Before Play, the window also checks the local network addresses the game needs (they can go missing after a restart
@@ -106,6 +106,7 @@ To put back the tuned defaults, run the install command with `RECLAIMER_RESET_GR
 | "Public join timed out" on one server | That server didn't answer: usually it runs an older Project Reclaimer ("This server runs an older version" on its card) or its port is closed. Pick another server; the server browser's filters can hide servers running another version. If **every** server times out, quit and reopen Project Reclaimer (it checks the network setup). |
 | Stuck on "Synchronizing players" for minutes | Usually the server (its clock is stuck for everyone). Try another server. |
 | "Graphics card stopped responding" | A GPU fault in the DirectX → Metal translation, mostly on heavy modded maps. Relaunch; lower Settings → render resolution if it repeats. |
+| Controller connected in Bluetooth, but the game ignores it | Turn the controller on before pressing Play. If the window shows **Controller: Your Mac's game controller service is stuck**, restart the Mac: macOS's controller service (`gamecontrollerd`) sometimes hangs, and then no app sees a controller until a restart. |
 | Game frozen and won't close | Tools → **Force Quit**. |
 | Something else | Tools → **Make Report**, and send the zip it puts on your Desktop. Logs are in `~/Games/ProjectReclaimer/logs/`. |
 

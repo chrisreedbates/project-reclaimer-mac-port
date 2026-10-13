@@ -3,6 +3,7 @@
 
   net-check          "ok" or "missing": are the local network addresses Reclaimer needs on lo0?
   net-fix            reinstall + restart the network startup task (one macOS password prompt)
+  controller-check   "stuck" if macOS's game controller service is stuck (no app sees controllers until a restart)
   crash-check        "crash: <plain explanation>" if the last game log shows a crash, else "ok"
   force-quit         stop the game, Wine and wineserver for this install (frozen windows Force Quit can't close)
   mods               JSON: downloaded Workshop mods with titles and sizes, plus free disk space
@@ -126,6 +127,28 @@ def net_fix():
             return "ok"
         time.sleep(1)
     return "error: The network setup is still incomplete. Restart your Mac, then open Project Reclaimer again."
+
+
+def gamecontrollerd_state():
+    """The process state of macOS's game controller service (e.g. "Ss"), or None when it isn't running."""
+    ps = subprocess.run(["/bin/ps", "-axo", "stat=,comm="], capture_output=True, text=True).stdout
+    for line in ps.splitlines():
+        state, _, command = line.strip().partition(" ")
+        if command.strip() == "/usr/libexec/gamecontrollerd":
+            return state
+    return None
+
+
+def controller_check():
+    """macOS's gamecontrollerd can get stuck in the kernel (state U, for good). Every app that looks for controllers
+    then hangs, Wine's included, so the game never sees one although Bluetooth shows it connected. Only a restart
+    clears it. A moment of waiting is normal, so it counts only if the service is stuck on every look."""
+    for i in range(4):
+        if i:
+            time.sleep(0.5)
+        if "U" not in (gamecontrollerd_state() or ""):
+            return "ok"
+    return "stuck"
 
 
 CRASHES = [
@@ -339,9 +362,9 @@ def uninstall():
     return "ok"
 
 
-COMMANDS = {"net-check": net_check, "net-fix": net_fix, "crash-check": crash_check, "force-quit": force_quit,
-            "mods": mods, "report": report, "reset-graphics": reset_graphics, "forget-steam": forget_steam,
-            "repair": repair, "uninstall": uninstall}
+COMMANDS = {"net-check": net_check, "net-fix": net_fix, "controller-check": controller_check,
+            "crash-check": crash_check, "force-quit": force_quit, "mods": mods, "report": report,
+            "reset-graphics": reset_graphics, "forget-steam": forget_steam, "repair": repair, "uninstall": uninstall}
 
 
 def main(argv):

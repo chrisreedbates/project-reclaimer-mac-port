@@ -247,6 +247,11 @@ func renderStates(to dir: URL) {
             $0.update = .done("Up to date"); $0.steam = .done("Signed in as player123")
             $0.gameError = "The graphics card stopped responding, so the game closed. This happens now and then on heavy modded maps. Press Play to start again; if it keeps happening, lower Settings > Render resolution in the game."
         }),
+        ("14-controller-stuck", {
+            $0.update = .done("Up to date"); $0.steam = .done("Signed in as player123")
+            $0.controllers = .warning("Your Mac's game controller service is stuck, so the game won't see a controller. "
+                                      + "Restart your Mac to fix it (Apple menu > Restart). Keyboard and mouse still work.")
+        }),
         ("8-bad-link", {
             $0.update = .done("Up to date"); $0.steam = .done("Signed in as player123")
             $0.link = "Warlock"; $0.linkError = "Paste a Steam Workshop link (it has “?id=” in it)."

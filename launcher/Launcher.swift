@@ -33,6 +33,7 @@ final class Launcher: ObservableObject {
     @Published var linkError: String?
     @Published var helpOpen = false
     @Published var network: Step? { didSet { if network != oldValue, let n = network { log("network: \(n)") } } }
+    @Published var controllers: Step? { didSet { if controllers != oldValue, let c = controllers { log("controllers: \(c)") } } }
     @Published var notice: String?   // a plain-language note, e.g. after Tools stopped the game
     @Published var showTools = false
     /// An older Project Reclaimer the player chose for servers that haven't updated (nil: the newest).
@@ -141,6 +142,16 @@ final class Launcher: ObservableObject {
         }, onExit: { _ in }))
     }
 
+    /// macOS's game controller service sometimes gets stuck for good: Bluetooth shows the controller connected, but
+    /// no app (the game included) sees it until the Mac restarts. Say so before Play instead of leaving people guessing.
+    func checkControllers() {
+        keep(python("tools.py", ["controller-check"], onLine: { [self] line in
+            guard line == "stuck" else { return }
+            controllers = .warning("Your Mac's game controller service is stuck, so the game won't see a controller. "
+                                   + "Restart your Mac to fix it (Apple menu > Restart). Keyboard and mouse still work.")
+        }, onExit: { _ in }))
+    }
+
     private func keep(_ p: LineProcess?) { if let p { running.append(p) } }
 
     // 1. updates
@@ -170,6 +181,7 @@ final class Launcher: ObservableObject {
             if relaunchRequested { return relaunch() }
             if !update.finished { update = .warning("Couldn't check for updates. You can still play.") }
             checkNetwork()
+            checkControllers()
             checkSteam()
         })
         if updater == nil {

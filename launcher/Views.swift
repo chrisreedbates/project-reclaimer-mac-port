@@ -160,6 +160,8 @@ struct HelpPanel: View {
          "Quit the game and open Project Reclaimer again: it installs any fix it needs (it may ask for your Mac password)."),
         ("Stuck on Synchronizing players",
          "Usually the server's fault. Leave and try another server."),
+        ("Controller connected in Bluetooth, but the game ignores it",
+         "Turn the controller on before you press Play: the game looks for controllers when it starts. If it still isn't seen, restart your Mac. macOS's game controller service sometimes gets stuck, and then no app can see a controller until a restart (this window warns you when it notices)."),
         ("Graphics card stopped responding",
          "Start the game again. If it keeps happening, lower Settings > Render resolution in the game."),
     ]
@@ -187,7 +189,7 @@ struct HelpPanel: View {
             }
             .frame(maxHeight: 300)
         } label: {
-            Label("Problems joining a server?", systemImage: "questionmark.circle").font(.callout.weight(.medium))
+            Label("Problems joining or playing?", systemImage: "questionmark.circle").font(.callout.weight(.medium))
                 .contentShape(Rectangle())
                 .onTapGesture { withAnimation { open.toggle() } }
         }
@@ -212,6 +214,10 @@ struct ContentView: View {
                 if let network = m.network {
                     Divider()
                     StepRow(title: "Network setup", step: network)
+                }
+                if let controllers = m.controllers {
+                    Divider()
+                    StepRow(title: "Controller", step: controllers)
                 }
                 if m.signingIn { SignInCard(qr: m.qr, onSkip: m.skipSteam) }
                 if m.steamSlow {

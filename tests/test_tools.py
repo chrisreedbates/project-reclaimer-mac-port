@@ -67,6 +67,36 @@ class ToolsTest(unittest.TestCase):
         (d / ".reclaimer-complete").write_text('{"timeupdated": 1, "manifest": "1"}')
         return d
 
+    # ---- controllers -------------------------------------------------------------------------------------------
+    def test_controller_check_reports_a_stuck_macos_controller_service(self):
+        # macOS's gamecontrollerd can get stuck in the kernel (state U): every app that looks for controllers then
+        # hangs, so Wine never lists the controller and the game ignores it although Bluetooth says connected
+        t = self.load()
+        with mock.patch.object(t, "gamecontrollerd_state", return_value="Us"), mock.patch.object(t.time, "sleep"):
+            self.assertEqual(t.controller_check(), "stuck")
+
+    def test_controller_check_ignores_a_moment_of_waiting(self):
+        t = self.load()
+        with mock.patch.object(t, "gamecontrollerd_state", side_effect=["Us", "Ss", "Us"]), \
+                mock.patch.object(t.time, "sleep"):
+            self.assertEqual(t.controller_check(), "ok")
+        for state in ("Ss", None):  # healthy, or not running at all (macOS starts it when needed)
+            with mock.patch.object(t, "gamecontrollerd_state", return_value=state), mock.patch.object(t.time, "sleep"):
+                self.assertEqual(t.controller_check(), "ok")
+
+    def test_gamecontrollerd_state_reads_the_process_list(self):
+        t = self.load()
+        ps = "Ss   /usr/sbin/bluetoothd\nUs   /usr/libexec/gamecontrollerd\n"
+        with mock.patch.object(t.subprocess, "run", return_value=mock.Mock(stdout=ps)):
+            self.assertEqual(t.gamecontrollerd_state(), "Us")
+        with mock.patch.object(t.subprocess, "run", return_value=mock.Mock(stdout="Ss   /usr/sbin/bluetoothd\n")):
+            self.assertIsNone(t.gamecontrollerd_state())
+
+    def test_controller_check_command(self):
+        rc, out = self.run_tool("controller-check")
+        self.assertEqual(rc, 0)
+        self.assertIn(out[-1], ("ok", "stuck"))
+
     # ---- network -----------------------------------------------------------------------------------------------
     def test_net_check_needs_every_range(self):
         t = self.load()
