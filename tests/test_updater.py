@@ -108,6 +108,33 @@ class UpdaterTest(unittest.TestCase):
         self.assertEqual((game / "project-reclaimer-v0.9.12.exe").read_bytes(), NEW_EXE)
         self.assertEqual(out[-1], "done: updated")
 
+    def rename_release_to_client(self):
+        """Since 0.9.18 releases name the game project-reclaimer-client-v<version>.exe (the server stays -dedicated-)."""
+        (self.rel / "project-reclaimer-v0.9.12.exe").rename(self.rel / "project-reclaimer-client-v0.9.12.exe")
+        (self.rel / "SHA256SUMS.txt").write_text(
+            f"{sha(NEW_EXE)}  project-reclaimer-client-v0.9.12.exe\n"
+            f"{sha(b'ded')}  project-reclaimer-dedicated-v0.9.12.exe\n")
+
+    def test_release_with_renamed_client_installs_under_the_usual_name(self):
+        # the whole Mac port (run.sh, Tools, the window, the mod helper) knows the game as project-reclaimer-v*.exe
+        self.rename_release_to_client()
+        (self.home / "game" / "project-reclaimer-v0.9.8.exe").write_bytes(b"old")
+        rc, out = self.run_updater("game")
+        self.assertEqual(rc, 0, out)
+        self.assertIn("status: Updating Project Reclaimer to 0.9.12…", out)
+        self.assertEqual(self.game_files(), ["project-reclaimer-v0.9.12.exe"])
+        self.assertEqual((self.home / "game" / "project-reclaimer-v0.9.12.exe").read_bytes(), NEW_EXE)
+        rc, out = self.run_updater("game")
+        self.assertEqual(out[-1], "done: up to date")
+
+    def test_older_release_with_renamed_client_can_be_chosen(self):
+        d = self.tags / "v0.9.11"
+        (d / "project-reclaimer-v0.9.11.exe").rename(d / "project-reclaimer-client-v0.9.11.exe")
+        (d / "SHA256SUMS.txt").write_text(f"{sha(OLD_EXE)}  project-reclaimer-client-v0.9.11.exe\n")
+        rc, out = self.run_updater("use", "0.9.11")
+        self.assertEqual(rc, 0, out)
+        self.assertEqual((self.home / "game" / "versions" / "project-reclaimer-v0.9.11.exe").read_bytes(), OLD_EXE)
+
     def test_corrupt_game_exe_is_downloaded_again(self):
         (self.home / "game" / "project-reclaimer-v0.9.12.exe").write_bytes(b"truncated")
         rc, out = self.run_updater("game")

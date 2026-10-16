@@ -41,7 +41,9 @@ RELEASES_API = os.environ.get("RECLAIMER_RELEASES_API", "https://api.github.com/
 RELEASE_DOWNLOADS = os.environ.get("RECLAIMER_RELEASE_DOWNLOADS", "https://github.com/ProjectReclaimer/"
                                    "project-reclaimer-releases/releases/download")
 MENU_DLLS = ("opengl32.dll", "libgallium_wgl.dll")  # Mesa, loaded from the exe's own folder
-CLIENT_EXE = re.compile(r"^project-reclaimer-v[0-9.]+\.exe$")
+CLIENT_EXE = re.compile(r"^project-reclaimer-v[0-9.]+\.exe$")  # the game as installed here
+# the game as a release names it: project-reclaimer-v0.9.17.exe, project-reclaimer-client-v0.9.18.exe from 0.9.18 on
+RELEASE_CLIENT = re.compile(r"^project-reclaimer-(?:client-)?v([0-9.]+)\.exe$")
 # the running game itself (as workshop_helper.py matches it), not any command that merely names the file
 GAME_PROCESS = os.environ.get("RECLAIMER_GAME_PROCESS", r"project-reclaimer-v[0-9.]+\.exe game-client")  # (tests)
 UA = {"User-Agent": "project-reclaimer-mac-port"}
@@ -137,14 +139,16 @@ def update_port():
 
 
 def client_in(sums_url):
-    """(exe name, sha256) of the game client listed in a release's SHA256SUMS.txt."""
+    """(download name, sha256, installed name) of the game client listed in a release's SHA256SUMS.txt. It's always
+    installed as project-reclaimer-v<version>.exe, the name run.sh, Tools, the window and the mod helper know."""
     sums = fetch(sums_url).decode().replace("\r", "")
     for line in sums.splitlines():
         parts = line.split()
         if len(parts) == 2:
             name = parts[1].lstrip("*")
-            if CLIENT_EXE.match(name):
-                return name, parts[0].lower()
+            m = RELEASE_CLIENT.match(name)
+            if m:
+                return name, parts[0].lower(), f"project-reclaimer-v{m.group(1)}.exe"
     raise RuntimeError("that Project Reclaimer release has no game client")
 
 
@@ -182,7 +186,7 @@ def update_game():
     older release), or raises."""
     if CHOSEN.exists():
         return "chosen"
-    exe, expected = latest_release()
+    download, expected, exe = latest_release()
     target = GAME / exe
     if target.exists() and sha256(target) == expected:
         remove_other_clients(exe)
@@ -191,7 +195,7 @@ def update_game():
         return "running"
     version = re.search(r"v([0-9.]+)\.exe$", exe).group(1)
     say(f"status: Updating Project Reclaimer to {version}…")
-    download_verified(f"{RELEASES}/{exe}", target, expected)
+    download_verified(f"{RELEASES}/{download}", target, expected)
     remove_other_clients(exe)
     return "updated"
 
@@ -223,12 +227,12 @@ def use(version):
         return update_game()
     if not re.fullmatch(r"\d+(\.\d+){1,3}", version):
         raise RuntimeError(f"{version} isn't a Project Reclaimer version")
-    exe, expected = client_in(f"{RELEASE_DOWNLOADS}/v{version}/SHA256SUMS.txt")
+    download, expected, exe = client_in(f"{RELEASE_DOWNLOADS}/v{version}/SHA256SUMS.txt")
     VERSIONS.mkdir(parents=True, exist_ok=True)
     target = VERSIONS / exe
     if not (target.exists() and sha256(target) == expected):
         say(f"status: Downloading Project Reclaimer {version}…")
-        download_verified(f"{RELEASE_DOWNLOADS}/v{version}/{exe}", target, expected)
+        download_verified(f"{RELEASE_DOWNLOADS}/v{version}/{download}", target, expected)
     for dll in MENU_DLLS:  # the menu's graphics library, next to this exe too
         if (GAME / dll).exists() and not (VERSIONS / dll).exists():
             shutil.copy2(GAME / dll, VERSIONS / dll)
