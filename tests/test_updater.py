@@ -162,6 +162,17 @@ class UpdaterTest(unittest.TestCase):
         self.assertIn("relaunch", out)
         self.assertEqual((self.home / "version").read_text().strip(), "1.2.0")
 
+    def test_after_a_port_update_the_new_installer_owns_the_game_update(self):
+        # the new install.sh updates the game with the new updater.py; this (old) process must not try again with
+        # its old code: in 1.2.1 that printed "no game client" for 0.9.18 just after the fix had installed it
+        (self.raw / "VERSION").write_text("1.2.0\n")
+        (self.raw / "VERSION.new").write_text("1.2.0\n")
+        (self.rel / "SHA256SUMS.txt").write_text("0" * 64 + "  some-future-name-v0.9.12.exe\n")
+        rc, out = self.run_updater("run")
+        self.assertEqual(rc, 0, out)
+        self.assertIn("relaunch", out)
+        self.assertFalse(any(l.startswith("error: ") for l in out), out)
+
     def test_installer_is_told_which_version_it_installs(self):
         (self.home / "game" / "project-reclaimer-v0.9.12.exe").write_bytes(NEW_EXE)
         (self.raw / "VERSION").write_text("1.2.0\n")

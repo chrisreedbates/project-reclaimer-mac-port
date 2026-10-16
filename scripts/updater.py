@@ -291,6 +291,8 @@ def main(argv):
         CHOSEN.unlink(missing_ok=True)
     steps = [update_game] if argv[1] == "game" else [update_port, update_game]
     for step in steps:
+        if step is update_game and results.get("update_port") == "updated":
+            break  # the new install.sh just updated the game with the new updater.py; this one's code is the old one
         try:
             results[step.__name__] = step()
             sys.stderr.write(f"updater: {step.__name__}: {results[step.__name__]}\n")
