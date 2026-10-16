@@ -30,6 +30,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>LSMinimumSystemVersion</key><string>14.0</string>
   <key>NSHighResolutionCapable</key><true/>
   <key>LSApplicationCategoryType</key><string>public.app-category.games</string>
+  <key>NSMicrophoneUsageDescription</key><string>Project Reclaimer uses your microphone for in-game voice chat.</string>
   <key>ReclaimerHome</key><string>$(xml "$BASE")</string>
 </dict>
 </plist>

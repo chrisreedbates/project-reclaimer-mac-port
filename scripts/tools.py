@@ -59,7 +59,7 @@ def loopback_prefixes():
             return m.group(1).split()
     except OSError:
         pass
-    return ["127.0.0", "127.0.1", "127.0.2", "127.0.3", "127.3.1"]
+    return ["127.0.0", "127.0.1", "127.0.2", "127.0.3", "127.3.1", "127.3.2", "127.3.3"]
 
 
 # one sample address per range (127.0.0.1 is always there, so 127.0.0.2 stands for its range)

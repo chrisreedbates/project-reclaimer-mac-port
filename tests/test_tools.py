@@ -108,7 +108,7 @@ class ToolsTest(unittest.TestCase):
 
     def test_expected_aliases_come_from_the_installed_loopback_script(self):
         script = self.home / "game" / "reclaimer-loopback.sh"
-        script.write_text(script.read_text().replace("127.3.1; do", "127.3.1 127.0.9; do"))  # a range a release adds
+        script.write_text(script.read_text().replace("; do", " 127.0.9; do", 1))  # a range a release adds
         t = self.load()
         for prefix in ("127.0.0.", "127.0.1.", "127.0.2.", "127.3.1.", "127.0.9."):
             self.assertTrue(any(a.startswith(prefix) for a in t.EXPECTED_ALIASES), prefix)
